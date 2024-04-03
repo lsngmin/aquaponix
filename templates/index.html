@@ -47,7 +47,25 @@
 						</tbody>	
 					</table>
 				</div>
-				<!-- CSV 파일 값 구현 테이블 START!!!-->
+				<!-- CSV 파일 값 구현 테이블 END!!!-->
+				<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+					<h2>Log Record</h2>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-striped table-sm table-hover">
+						<thead>
+							<tr style="text-align: center;">
+								<th scope="col" class="table-activate table-info">LOG DATA</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for i in tmp %}
+								<tr >
+									<td>{{ i }}</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
 			</main>
 			<!-- FOOTER START!! -->
 			{% include "footer.html" %}

@@ -1,9 +1,9 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, session
 import pandas as pd
 import numpy as np
 import glob
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import calendar, time
 import csv, os, sys
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -11,7 +11,7 @@ from flask import jsonify
 from db import conn, data
 import logging, logging.handlers
 
-app = Flask(__name__)
+
 
 ## LOG SET CODE S###
 def log_init__():
@@ -33,6 +33,8 @@ def log_init__():
     else:
        return logger
 logger = log_init__()
+app = Flask(__name__)
+app.secret_key = 'app'
 ## LOG SET CODE E###
 
                                                     # *** 스케쥴 작업을 위한 함수는 본 주석 밑에서 구현 *** #
@@ -45,6 +47,7 @@ def SQ_rcv_eq_status():
         logger.error(f'[DATABASE] {e}')
     else:
         logger.info(f'[SCHEDULER] (SUCCESS)HEAD OF CUR LIST : {sensor_status_list[0]}')
+        return sensor_status_list
 ### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 E###
 
 ### HTML에 값 넘겨주기 위한 전역변수 할당 S###
@@ -56,14 +59,24 @@ sensor_status_list = SQ_rcv_eq_status()
 ## SCHEDULER SET CODE S##
 schedule = BackgroundScheduler(daemon=True, timezone='Asia/Seoul')
 #schedule.add_job(scheduler, 'interval', seconds=15) #현재 서버 오류로 15초 단위 측정 불가
-schedule.add_job(SQ_rcv_eq_status, 'interval', seconds=3)
+schedule.add_job(SQ_rcv_eq_status, 'interval', seconds=300)
 schedule.start()
 ## SCHEDULER SET CODE E##
 
 #### !FLASK HTML MAPPING CODE! S####
 @app.route('/')
 def index():
-    return render_template('index.html', sensor_status_list=sensor_status_list)
+    ## 로그파일을 index.html로 전송 하는 코드 S##
+    global sensor_status_list
+    tmp = open('log/tmp', mode='r')
+    lines = tmp.readlines()
+    li = lines[-10:]
+    ## 로그파일을 index.html로 전송 하는 코드 E##
+    ## 전역변수인 센서상태리스트가 선언 되어있지 않은 경우 초기화 하는 코드 S##
+    if sensor_status_list == None:
+       sensor_status_list = SQ_rcv_eq_status()
+    ## 전역변수인 센서상태리스트가 선언 되어있지 않은 경우 초기화 하는 코드 E##
+    return render_template('index.html', sensor_status_list=sensor_status_list, tmp=li)
 
 @app.route('/temperature')
 def temperature():
@@ -82,29 +95,13 @@ def do():
 
 @app.route('/tt')
 def tt():
- chartInfo = graphs()
- return render_template('tt.html', chartInfo=chartInfo)
+ return render_template('tt.html')
 
 @app.route('/data')
 def get_data():
     data = pd.read_csv('csv/test.csv')
     return jsonify(data.to_dict(orient='records'))
 #### !FLASK HTML MAPPING CODE! E####
-
-#### !FLASK MAIN FUNCTION CODE! S####
-if __name__ == "__main__":
-    port = 5002 ;debug=False ;use_reloader=False ;host='0.0.0.0'
-    # ** LOG RECORD ** S#
-    logger.info(f'[SERVER] CURRENT_PORT : {port}')
-    logger.info(f'[SERVER] CURRENT_HOST : {host}')
-    logger.info(f'[SERVER] CURRENT_DEBUG : {debug}')
-    logger.info(f'[SERVER] CURRENT_RELOADER : {use_reloader}')
-    
-
-    # ** LOG RECORD ** E#
-    app.run(debug = debug,use_reloader=use_reloader, host=host, port=port, passthrough_errors=True)
-#### !FLASK MAIN FUNCTION CODE! E####
-
 
 ### 사용 X 함수1 S###
 def graphs():
@@ -160,17 +157,27 @@ def getSeries(df,option):
         series += '{"name" : "Tank-' + str(tank) + '", "data" : ['
         for index, row in df.iterrows():
             if row['tank_id'] == tank and index % 4 == 0:
-                #print(row['date'])
-                #print(int(datetime.strptime(row['date'], '%Y-%M-%d').timestamp()))
-                #print('\n')
                 series += '[' + str(calendar.timegm(time.strptime(row['date'], '%Y-%m-%d'))) + ',' + str(int(row[option])) + '],'                   
         series = series[:-1]
         series += ']},'
        
     series = series[:-1] + ']'
-    print(series)
     return series
 ### 사용 X 함수2 E###
+
+#### !FLASK MAIN FUNCTION CODE! S####
+if __name__ == "__main__":
+    port = 5002 ;debug=False ;use_reloader=False ;host='0.0.0.0'
+    # ** LOG RECORD ** S#
+    logger.info(f'[SERVER] CRT_PORT : {port} #CRT_HOST : {host} #CRT_DEBUG : {debug} #CRT_RELOADER : {use_reloader}')
+    # ** LOG RECORD ** E#
+    app.run(debug = debug,use_reloader=use_reloader, host=host, port=port, passthrough_errors=True)
+#### !FLASK MAIN FUNCTION CODE! E####
+
+
+
+
+
 
 ### 사용 X 함수3 S###
 def scheduler():
