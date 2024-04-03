@@ -5,7 +5,7 @@ import glob
 import json
 from datetime import datetime
 import calendar, time
-import csv, os
+import csv, os, sys
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import jsonify
 from db import conn, data
@@ -14,39 +14,49 @@ import logging, logging.handlers
 app = Flask(__name__)
 
 ## LOG SET CODE S###
-logger = logging.getLogger(name='[LOG]')
-logger.setLevel(logging.INFO)
-logger.propagate = False
-formatter = logging.Formatter('%(name)s[%(levelname)s] %(asctime)s | %(message)s', "%Y-%m-%d %H:%M:%S")
+def log_init__():
+    try:
+        logger = logging.getLogger(name='[LOG]')
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+        formatter = logging.Formatter('%(name)s[%(levelname)s] %(asctime)s | %(message)s', "%Y-%m-%d %H:%M:%S")
 
-if logger.hasHandlers():
-    logger.handlers.clear()
+        if logger.hasHandlers():
+            logger.handlers.clear()
 
-timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/tmp' ,when='midnight', interval=1, encoding='utf-8')
-timedfilehandler.setFormatter(formatter)
-timedfilehandler.suffix = "%Y%m%d.log"
-logger.addHandler(timedfilehandler)
+        timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename='log/tmp' ,when='midnight', interval=1, encoding='utf-8')
+        timedfilehandler.setFormatter(formatter)
+        timedfilehandler.suffix = "%Y%m%d.log"
+        logger.addHandler(timedfilehandler)
+    except Exception as e:
+       logger.error(f'[SERVER] {e}')
+    else:
+       return logger
+logger = log_init__()
 ## LOG SET CODE E###
+
+                                                    # *** 스케쥴 작업을 위한 함수는 본 주석 밑에서 구현 *** #
+### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 S###
+def SQ_rcv_eq_status():
+    try:
+        global sensor_status_list
+        sensor_status_list  = data.rcv_sensor_status()
+    except Exception as e:
+        logger.error(f'[DATABASE] {e}')
+    else:
+        logger.info(f'[SCHEDULER] (SUCCESS)HEAD OF CUR LIST : {sensor_status_list[0]}')
+### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 E###
 
 ### HTML에 값 넘겨주기 위한 전역변수 할당 S###
 global sensor_status_list
-sensor_status_list = data.rcv_sensor_status()
+sensor_status_list = SQ_rcv_eq_status()
 ### HTML에 값 넘겨주기 위한 전역변수 할당 E###
-
-                                                    # *** 스케쥴 작업을 위한 함수는 본 주석 밑에서 구현 *** #
-
-### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 S###
-def SQ_rcv_eq_status():
-   global sensor_status_list
-   sensor_status_list  = data.rcv_sensor_status()
-### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 E###
-   
 
                                                     # *** 스케줄러 초기화 및 실행 모든 스케줄러 구문은 본 주석 밑에서 구현 *** #
 ## SCHEDULER SET CODE S##
 schedule = BackgroundScheduler(daemon=True, timezone='Asia/Seoul')
 #schedule.add_job(scheduler, 'interval', seconds=15) #현재 서버 오류로 15초 단위 측정 불가
-schedule.add_job(SQ_rcv_eq_status, 'interval', seconds=86400)
+schedule.add_job(SQ_rcv_eq_status, 'interval', seconds=3)
 schedule.start()
 ## SCHEDULER SET CODE E##
 
@@ -75,12 +85,25 @@ def tt():
  chartInfo = graphs()
  return render_template('tt.html', chartInfo=chartInfo)
 
-
 @app.route('/data')
 def get_data():
     data = pd.read_csv('csv/test.csv')
     return jsonify(data.to_dict(orient='records'))
 #### !FLASK HTML MAPPING CODE! E####
+
+#### !FLASK MAIN FUNCTION CODE! S####
+if __name__ == "__main__":
+    port = 5002 ;debug=False ;use_reloader=False ;host='0.0.0.0'
+    # ** LOG RECORD ** S#
+    logger.info(f'[SERVER] CURRENT_PORT : {port}')
+    logger.info(f'[SERVER] CURRENT_HOST : {host}')
+    logger.info(f'[SERVER] CURRENT_DEBUG : {debug}')
+    logger.info(f'[SERVER] CURRENT_RELOADER : {use_reloader}')
+    
+
+    # ** LOG RECORD ** E#
+    app.run(debug = debug,use_reloader=use_reloader, host=host, port=port, passthrough_errors=True)
+#### !FLASK MAIN FUNCTION CODE! E####
 
 
 ### 사용 X 함수1 S###
@@ -165,18 +188,3 @@ def scheduler():
     f.close()
     print("스케쥴 종료")
 ### 사용 X 함수3 E###
-
-#### !FLASK MAIN FUNCTION CODE! S####
-if __name__ == "__main__":
-    port = 5002 ;debug=False ;use_reloader=False ;host='0.0.0.0'
-    # ** LOG RECORD ** S#
-    logger.info(f'-------------SERVER START!-------------')
-    logger.info(f'[SERVER]  ### CURRENT_PORT : {port} ### ')
-    logger.info(f'[SERVER]  ### CURRENT_HOST : {host} ### ')
-    logger.info(f'[SERVER]  ### CURRENT_DEBUG : {debug} ### ')
-    logger.info(f'[SERVER]  ### CURRENT_RELOADER : {use_reloader} ### ')
-    # ** LOG RECORD ** E#
-    app.run(debug = debug,use_reloader=use_reloader, host=host, port=port, passthrough_errors=True)
-#### !FLASK MAIN FUNCTION CODE! E####
-
-    
