@@ -174,11 +174,6 @@ if __name__ == "__main__":
     app.run(debug = debug,use_reloader=use_reloader, host=host, port=port, passthrough_errors=True)
 #### !FLASK MAIN FUNCTION CODE! E####
 
-
-
-
-
-
 ### 사용 X 함수3 S###
 def scheduler():
     f = open('csv/test.csv','a', newline='')
