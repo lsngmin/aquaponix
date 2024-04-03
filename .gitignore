@@ -1,0 +1,6 @@
+.DS_Store
+__pycache__
+env
+log
+test.py
+tempCodeRunnerFile.py
