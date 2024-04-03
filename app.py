@@ -166,6 +166,7 @@ def scheduler():
     print("스케쥴 종료")
 ### 사용 X 함수3 E###
 
+#### !FLASK MAIN FUNCTION CODE! S####
 if __name__ == "__main__":
     port = 5002 ;debug=False ;use_reloader=False ;host='0.0.0.0'
     # ** LOG RECORD ** S#
@@ -176,4 +177,6 @@ if __name__ == "__main__":
     logger.info(f'[SERVER]  ### CURRENT_RELOADER : {use_reloader} ### ')
     # ** LOG RECORD ** E#
     app.run(debug = debug,use_reloader=use_reloader, host=host, port=port, passthrough_errors=True)
+#### !FLASK MAIN FUNCTION CODE! E####
+
     
