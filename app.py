@@ -46,8 +46,19 @@ def SQ_rcv_eq_status():
     except Exception as e:
         logger.error(f'[DATABASE] {e}')
     else:
-        logger.info(f'[SCHEDULER] (SUCCESS)HEAD OF CUR LIST : {sensor_status_list[0]}')
+        logger.info(f'[SCHEDULER] SQ_rcv_eq_status() (SUCCESS)HEAD OF CUR LIST : {sensor_status_list[0]}')
         return sensor_status_list
+### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 E###
+
+### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 S###
+def SQ_rcv_ss_value():
+    try:
+        list = data.sensor_value()
+    except Exception as e:
+        logger.error(f'[DATABASE] {e}')
+    else:
+        for k, v in list.items():
+            logger.info(f'[SCHEDULER] SQ_rcv_ss_value() (SUCCESS)CUR LIST :  EQ_ID = {k}, VALUE =  {v} ')
 ### DB에서 EQ_STATUS 테이블의 값을 리스트에 저장 E###
 
 ### HTML에 값 넘겨주기 위한 전역변수 할당 S###
@@ -59,8 +70,9 @@ sensor_status_list = SQ_rcv_eq_status()
 ## SCHEDULER SET CODE S##
 schedule = BackgroundScheduler(daemon=True, timezone='Asia/Seoul')
 #schedule.add_job(scheduler, 'interval', seconds=15) #현재 서버 오류로 15초 단위 측정 불가
-schedule.add_job(SQ_rcv_eq_status, 'interval', seconds=300)
-schedule.start()
+schedule.add_job(SQ_rcv_eq_status, 'interval', seconds=3600)
+schedule.add_job(SQ_rcv_ss_value, 'interval', seconds=15)
+schedule.start() 
 ## SCHEDULER SET CODE E##
 
 #### !FLASK HTML MAPPING CODE! S####
@@ -80,27 +92,63 @@ def index():
 
 @app.route('/temperature')
 def temperature():
- chartInfo = graphs()
- return render_template('temperature.html', chartInfo=chartInfo)
+ return render_template('temperature.html')
 
 @app.route('/ph')
 def ph():
- chartInfo = graphs()
- return render_template('ph.html', chartInfo=chartInfo)
+ return render_template('ph.html')
 
 @app.route('/do')
 def do():
- chartInfo = graphs()
- return render_template('do.html', chartInfo=chartInfo)
+ return render_template('do.html')
 
-@app.route('/tt')
-def tt():
- return render_template('tt.html')
-
-@app.route('/data')
-def get_data():
-    data = pd.read_csv('csv/test.csv')
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 S##
+@app.route('/eq_id_146_t2_temperature')
+def get_146():
+    data = pd.read_csv('csv/146.csv')
     return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 S##
+@app.route('/eq_id_145_t2_salinity')
+def get_145():
+    data = pd.read_csv('csv/145.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+        ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 S##
+@app.route('/eq_id_143_t2_do')
+def get_143():
+    data = pd.read_csv('csv/143.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+        ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 S##
+@app.route('/eq_id_142_t2_ph')
+def get_142():
+    data = pd.read_csv('csv/142.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 S##
+@app.route('/eq_id_130_t1_ph')
+def get_130():
+    data = pd.read_csv('csv/130.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+@app.route('/eq_id_131_t1_do')
+def get_131():
+    data = pd.read_csv('csv/131.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+@app.route('/eq_id_132_t1_salinity')
+def get_132():
+    data = pd.read_csv('csv/132.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+@app.route('/eq_id_133_t1_temperature')
+def get_133():
+    data = pd.read_csv('csv/133.csv')
+    return jsonify(data.to_dict(orient='records'))
+    ## ?실시간 동기화를 위한 데이터 세트 매핑 함수2 E##
+
 #### !FLASK HTML MAPPING CODE! E####
 
 ### 사용 X 함수1 S###

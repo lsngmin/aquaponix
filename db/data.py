@@ -1,6 +1,7 @@
 from db import conn as co
 import pandas as pd
 import numpy as np
+
 def retrieve_and_save_data():
     data = retrieve_data()
     print("데이터 저장됨.")
@@ -69,3 +70,53 @@ def rcv_sensor_status():
     # 143,1,2,용존산소(DO) 센서
     # 145,1,2,염도센서
     # 146,1,2,수온 센서
+
+#.센서값 각각 CSV 파일에 저장
+def sensor_value():
+    conn, cursor = co.connect_to_mysql()
+    
+    query_146 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 146"
+    query_145 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 145"
+    query_143 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 143"
+    query_142 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 142"
+    
+    query_133 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 133"
+    query_130 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 130"
+    query_131 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 131"
+    query_132 = "SELECT mea_dt, value_mod FROM sensor_value_tb WHERE mea_dt > '2024-03-31 00:00:00' and eq_id = 132"
+
+
+    r_146 = co.execute_query(cursor, query_146)
+    r_145= co.execute_query(cursor, query_145)
+    r_143 = co.execute_query(cursor, query_143)
+    r_142 = co.execute_query(cursor, query_142)
+
+    r_133 = co.execute_query(cursor, query_133)
+    r_132 = co.execute_query(cursor, query_132)
+    r_131 = co.execute_query(cursor, query_131)
+    r_130 = co.execute_query(cursor, query_130)
+
+    df_146 = pd.DataFrame(r_146, columns=['mea_dt', 'value'])
+    df_146.to_csv('csv/146.csv', index=False, mode='r+')
+    df_145 = pd.DataFrame(r_145, columns=['mea_dt', 'value'])
+    df_145.to_csv('csv/145.csv', index=False, mode='r+')
+    df_143 = pd.DataFrame(r_143, columns=['mea_dt', 'value'])
+    df_143.to_csv('csv/143.csv', index=False, mode='r+')
+    df_142 = pd.DataFrame(r_142, columns=['mea_dt', 'value'])
+    df_142.to_csv('csv/142.csv', index=False, mode='r+')
+
+    df_133 = pd.DataFrame(r_133, columns=['mea_dt', 'value'])
+    df_133.to_csv('csv/133.csv', index=False, mode='r+')
+    df_132 = pd.DataFrame(r_132, columns=['mea_dt', 'value'])
+    df_132.to_csv('csv/132.csv', index=False, mode='r+')
+    df_131 = pd.DataFrame(r_131, columns=['mea_dt', 'value'])
+    df_131.to_csv('csv/131.csv', index=False, mode='r+')
+    df_130 = pd.DataFrame(r_130, columns=['mea_dt', 'value'])
+    df_130.to_csv('csv/130.csv', index=False, mode='r+')
+
+    list = [142, 143, 145, 146, 130, 131, 132, 133]
+    list2 = {}
+    for i in list:
+        df = pd.read_csv(f'csv/{i}.csv')
+        list2[i] = df.loc[:, 'mea_dt'].tail(1).item()
+    return list2 
